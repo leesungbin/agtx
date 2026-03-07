@@ -2436,12 +2436,12 @@ fn test_needs_agent_switch_no_config_keeps_current() {
 }
 
 #[test]
-fn test_needs_agent_switch_no_config_keeps_non_default_agent() {
+fn test_needs_agent_switch_no_config_falls_back_to_default() {
     use crate::config::{GlobalConfig, ProjectConfig, MergedConfig};
     use crate::db::Task;
 
-    // No review agent configured, but task is running codex (set by explicit running override).
-    // Moving to review should NOT switch back to default — keep codex.
+    // No review agent configured, task is running codex (set by explicit running override).
+    // Moving to review should switch back to default agent (claude).
     let mut global = GlobalConfig::default();
     global.agents.running = Some("codex".to_string());
     let config = MergedConfig::merge(&global, &ProjectConfig::default());
@@ -2449,8 +2449,8 @@ fn test_needs_agent_switch_no_config_keeps_non_default_agent() {
     task.agent = "codex".to_string(); // was switched to codex for running phase
 
     let (agent, switch) = needs_agent_switch(&config, &task, "review");
-    assert_eq!(agent, "codex"); // keeps codex, not fallback to claude
-    assert!(!switch);
+    assert_eq!(agent, "claude"); // falls back to default agent
+    assert!(switch);
 }
 
 #[test]

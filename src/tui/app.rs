@@ -5208,19 +5208,12 @@ fn glob_path_exists(pattern: &str) -> bool {
 
 /// Check if a phase transition requires switching to a different agent.
 /// Returns (target_agent_name, needs_switch).
-/// Only switches when an explicit phase-specific agent is configured.
-/// When no override exists, the current agent is kept (no switch).
+/// Determine the target agent for a phase and whether a switch is needed.
+/// Uses the phase-specific agent if configured, otherwise falls back to default_agent.
 fn needs_agent_switch(config: &MergedConfig, task: &Task, phase: &str) -> (String, bool) {
-    match config.explicit_agent_for_phase(phase) {
-        Some(target) => {
-            let switch = task.agent != target;
-            (target.to_string(), switch)
-        }
-        None => {
-            // No explicit agent for this phase — keep the current session
-            (task.agent.clone(), false)
-        }
-    }
+    let target = config.agent_for_phase(phase);
+    let switch = task.agent != target;
+    (target.to_string(), switch)
 }
 
 /// Collect all unique agent names configured across phases.
