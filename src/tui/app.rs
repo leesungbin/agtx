@@ -4355,7 +4355,10 @@ impl App {
         let all_agents = collect_phase_agents(&self.state.config);
         let project_name = self.state.project_name.clone();
         let tmux_project_name = self.state.tmux_project_name.clone();
-        let base_branch = self.state.config.base_branch.clone();
+        let base_branch = task
+            .base_branch
+            .clone()
+            .unwrap_or_else(|| self.state.config.base_branch.clone());
         let worktree_dir = self.state.config.worktree_dir.clone();
         let copy_files = self.state.config.copy_files.clone();
         let init_script = self.state.config.init_script.clone();
@@ -4699,7 +4702,10 @@ impl App {
         let all_agents = collect_phase_agents(&self.state.config);
         let project_name = self.state.project_name.clone();
         let tmux_project_name = self.state.tmux_project_name.clone();
-        let base_branch = self.state.config.base_branch.clone();
+        let base_branch = task
+            .base_branch
+            .clone()
+            .unwrap_or_else(|| self.state.config.base_branch.clone());
         let worktree_dir = self.state.config.worktree_dir.clone();
         let copy_files = self.state.config.copy_files.clone();
         let init_script = self.state.config.init_script.clone();
@@ -4899,7 +4905,10 @@ impl App {
         let prompt_trigger = resolve_prompt_trigger(&plugin, "running");
         let project_name = self.state.project_name.clone();
         let tmux_project_name = self.state.tmux_project_name.clone();
-        let base_branch = self.state.config.base_branch.clone();
+        let base_branch = task
+            .base_branch
+            .clone()
+            .unwrap_or_else(|| self.state.config.base_branch.clone());
         let worktree_dir = self.state.config.worktree_dir.clone();
         let copy_files = self.state.config.copy_files.clone();
         let init_script = self.state.config.init_script.clone();
