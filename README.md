@@ -7,9 +7,10 @@
 <div align="left">
     
 > **An AI agent that manages other coding agents in a terminal kanban board** - Add tasks. Press one key. An orchestrator agent picks it up, plans, and delegates to multiple coding agents running in parallel. Come back to changes ready to merge.
-> 
-> **Let different AI coding agents collaborate** autonomously on the same task with automatic session switching and context awareness -  
-> e.g. **Gemini** → research | **Claude** → implement | **Codex** → review
+>
+> **Let different AI coding agents collaborate** autonomously on the same task with automatic session switching and context awareness - e.g. **Gemini** → research | **Claude** → implement | **Codex** → review
+>
+> **Capture ideas without leaving your agent session** — `/agtx:brainstorm` to explore freely, `/agtx:sweep` to push the conversation to the board as tasks in one step.
 
 </div>
 
@@ -17,6 +18,17 @@
 [![Release](https://img.shields.io/github/v/release/fynnfluegge/agtx)](https://github.com/fynnfluegge/agtx/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#features">Features</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#brainstorm--sweep-skills">Brainstorm & Sweep Skills</a> •
+  <a href="#mcp-server">MCP Server</a> •
+  <a href="#plugins">Plugins</a> •
+  <a href="#orchestrator-agent-experimental">Orchestrator</a> •
+  <a href="#configuration">Configuration</a>
+</p>
 
 ---
 
@@ -36,6 +48,8 @@
 
 AI coding tools give you one agent, one task, one terminal. agtx gives you a **kanban board where multiple coding agents work in parallel** — each in its own git worktree, each in its own tmux window, running autonomously through a spec-driven workflow managed by an orchestrator agent.
 
+When ideas come up mid-session, `/agtx:brainstorm` keeps your agent in exploration mode — then `/agtx:sweep` turns the conversation into board tasks with a single confirmation step. **No context switching, no copy-pasting — ideas flow directly into work.**
+
 With the orchestrator, you don't even manage the board yourself. **An AI agent picks up tasks, delegates work, and ensures getting things done** through planning, implementation, review and resolving conflicts — while you focus on what matters: research, defining tasks, and merging changes.
 
 > [!TIP]
@@ -44,6 +58,7 @@ With the orchestrator, you don't even manage the board yourself. **An AI agent p
 ## Features
 
 - **Orchestrator agent**: A dedicated AI agent that autonomously manages your kanban board via [MCP](https://modelcontextprotocol.io) — delegates to coding agents, advances phases, checks for merge conflicts ([experimental](#orchestrator-agent-experimental))
+- **Brainstorm & Sweep skills**: Capture ideas and push them to the board from any coding agent session — `/agtx:brainstorm` to explore freely, `/agtx:sweep` to decompose and create tasks with one confirmation step ([details](#brainstorm--sweep-skills))
 - **Multi-agent task lifecycle**: Configure different agents per workflow phase — e.g. Gemini for research, Claude for implementation, Codex for review — with automatic agent switching
 - **Parallel execution**: Every task gets its own git worktree and tmux window — run as many agents as needed, simultaneously
 - **Spec-driven plugins**: Plug in [GSD](https://github.com/fynnfluegge/get-shit-done-cc), [Spec-kit](https://github.com/github/spec-kit), [OpenSpec](https://github.com/Fission-AI/OpenSpec), [BMAD](https://github.com/bmad-code-org/BMAD-METHOD), [Superpowers](https://github.com/obra/superpowers) — or define your own with a single TOML file
@@ -81,7 +96,6 @@ agtx --experimental
 cargo build --release
 cp target/release/agtx ~/.local/bin/
 ```
-</details>
 
 ### Requirements
 
@@ -90,7 +104,8 @@ cp target/release/agtx ~/.local/bin/
 
 ## Usage
 
-### Keyboard Shortcuts
+<details>
+<summary><strong>Keyboard Shortcuts</strong></summary>
 
 | Key | Action |
 |-----|--------|
@@ -99,6 +114,7 @@ cp target/release/agtx ~/.local/bin/
 | `o` | Create new task |
 | `R` | Enter research mode |
 | `↩` | Open task (view agent session) |
+| `Ctrl+f` | Fullscreen attach to task's tmux session |
 | `m` | Move task forward in workflow |
 | `r` | Resume task (Review → Running) / Move back (Running → Planning) |
 | `p` | Next phase (Review → Planning, cyclic plugins only) |
@@ -110,7 +126,10 @@ cp target/release/agtx ~/.local/bin/
 | `e` | Toggle project sidebar |
 | `q` | Quit |
 
-### Task Creation Wizard
+</details>
+
+<details>
+<summary><strong>Task Creation Wizard</strong></summary>
 
 Press `o` to create a new task. The wizard guides you through:
 1. **Title** — enter a short task name
@@ -119,7 +138,10 @@ Press `o` to create a new task. The wizard guides you through:
 
 The agent is configured at the project level via `config.toml` (not per-task).
 
-### Task Description Editor
+</details>
+
+<details>
+<summary><strong>Task Description Editor</strong></summary>
 
 When writing a task description, you can reference files, skills, and other tasks inline:
 
@@ -129,13 +151,112 @@ When writing a task description, you can reference files, skills, and other task
 | `/` | Fuzzy search and insert an agent skill/command (at line start or after space) |
 | `!` | Fuzzy search and insert a task reference (at line start or after space) |
 
+</details>
 
-### Agent Session Features
+### Agent Sessions
 
-- Sessions automatically resume when moving Review → Running
-- Full conversation context is preserved across the task lifecycle
-- View live agent output in the task popup
-- **Auto merge-conflict resolution**: When a Review task becomes idle, agtx checks for merge conflicts with the default branch. If conflicts are detected, the agent is automatically instructed to resolve them.
+Each task runs in its own tmux window with a dedicated coding agent. The session persists across the entire task lifecycle — you can open the task popup at any time to see live agent output, or press `Ctrl+f` to attach fullscreen.
+
+- **Persistent context**: The agent's full conversation history is preserved across Planning → Running → Review
+- **Resume from Review**: Moving a task back to Running simply reconnects to the existing session — no re-initialization needed
+- **Inline view**: Press `↩` on any active task to open a scrollable tmux view inside the TUI
+- **Fullscreen**: Press `Ctrl+f` to attach directly to the agent's tmux window
+- **Auto merge-conflict resolution**: When a Review task becomes idle, agtx checks for merge conflicts with the default branch using a non-destructive virtual merge (`git merge-tree`). If conflicts are detected, the agent is automatically sent the `/agtx:merge-conflicts` skill to resolve them and re-commit
+
+## Brainstorm & Sweep Skills
+
+Two companion skills for capturing ideas in any coding agent session and turning them into tasks in the agtx board.
+
+| Skill | Command | When to use |
+|-------|---------|-------------|
+| **Brainstorm** | `/agtx:brainstorm` | Explore a feature idea — discussion only, no planning or implementation |
+| **Sweep** | `/agtx:sweep` | Push conversation outcomes to the agtx board as tasks |
+
+**Typical flow:**
+```
+/agtx:brainstorm   ← explore the idea freely
+      ↓
+/agtx:sweep        ← extract tasks, confirm, push to board
+      ↓
+agtx board         ← tasks appear in Backlog, ready to advance
+```
+
+The brainstorm skill keeps the agent in discussion mode — asking questions, surfacing trade-offs, no code or plans. When the conversation feels complete, run `/agtx:sweep` to decompose outcomes into feature-level tasks and push them to the board with a single confirmation step.
+
+### Install
+
+<details>
+<summary><strong>Claude Code</strong></summary>
+
+```bash
+claude plugin marketplace add fynnfluegge/agtx
+claude plugin install agtx@agtx-marketplace
+claude mcp add --scope user agtx -- agtx mcp-serve
+```
+
+</details>
+
+<details>
+<summary><strong>Codex</strong></summary>
+
+```bash
+codex mcp add agtx -- agtx mcp-serve
+```
+
+Add to your project's `.agents/plugins/marketplace.json`:
+```json
+{
+  "name": "local-repo",
+  "plugins": [
+    {
+      "name": "agtx",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agtx"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
+```
+
+Then in any Codex session: `@agtx:sweep` / `@agtx:brainstorm`
+
+</details>
+
+<details>
+<summary><strong>Gemini CLI</strong></summary>
+
+```bash
+gemini mcp add agtx -- agtx mcp-serve
+echo "@skills/sweep/SKILL.md" >> ~/GEMINI.md
+```
+
+</details>
+
+<details>
+<summary><strong>Cursor</strong></summary>
+
+```bash
+cursor mcp add agtx -- agtx mcp-serve
+cp skills/sweep/SKILL.md ~/.cursor/rules/agtx-sweep.md
+```
+
+</details>
+
+<details>
+<summary><strong>Other</strong></summary>
+
+Register `agtx mcp-serve` as an MCP server, then copy `skills/sweep/SKILL.md` into your agent's context.
+
+</details>
+
+> [!NOTE]
+> The project must have been opened in agtx at least once to appear in `list_projects`. Run `agtx` in your project directory first.
 
 ## Configuration
 
@@ -436,10 +557,41 @@ tmux -L agtx attach
 
 ### Data Storage
 
-- **Database**: `~/Library/Application Support/agtx/` (macOS) or `~/.local/share/agtx/` (Linux)
+- **Database**: `~/Library/Application Support/agtx/` (macOS) or `~/.config/agtx/` (Linux)
 - Config: `~/.config/agtx/config.toml`
 - **Worktrees**: `.agtx/worktrees/` in each project
 - **Tmux**: Dedicated server `agtx` with per-project sessions
+
+## MCP Server
+
+The agtx MCP server (`agtx mcp-serve`) exposes the board to any coding agent session via the [Model Context Protocol](https://modelcontextprotocol.io). Used by the orchestrator agent and the brainstorm & sweep skills.
+
+### Modes
+
+| Mode | Command | Used by |
+|------|---------|---------|
+| **Global** | `agtx mcp-serve` | Sweep/brainstorm skills — works across all projects |
+| **Project-scoped** | `agtx mcp-serve <path>` | Orchestrator — bound to one project at startup |
+
+In global mode all tools require a `project_id` parameter. Call `list_projects` first to resolve it.
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_projects` | List all projects indexed in agtx |
+| `list_tasks` | List tasks, optionally filtered by status |
+| `get_task` | Get task details + `allowed_actions` for valid transitions |
+| `create_task` | Create a single backlog task |
+| `create_tasks_batch` | Batch-create tasks with index-based dependencies |
+| `update_task` | Modify a backlog task (title, description, deps) |
+| `delete_task` | Delete a backlog task |
+| `move_task` | Queue a phase transition |
+| `get_transition_status` | Check if a queued transition completed or errored |
+| `check_conflicts` | Non-destructive merge conflict check against default branch |
+| `get_notifications` | Fetch pending orchestrator notifications |
+| `read_pane_content` | Read the last N lines of a task's tmux pane |
+| `send_to_task` | Send a message to a task's agent pane |
 
 ## Orchestrator Agent (Experimental)
 
@@ -475,19 +627,6 @@ The orchestrator communicates with agtx through the [Model Context Protocol (MCP
 └──────────────┘
 ```
 
-**MCP tools available to the orchestrator:**
-
-| Tool | Description |
-|------|-------------|
-| `list_tasks` | List all tasks, optionally filtered by status |
-| `get_task` | Get task details including `allowed_actions` for valid transitions |
-| `move_task` | Queue a state transition (the TUI executes it with full side effects) |
-| `get_transition_status` | Check if a queued transition completed or errored |
-| `check_conflicts` | Non-destructive merge conflict detection against the default branch |
-| `get_notifications` | Manually fetch pending notifications (backup — usually pushed automatically) |
-| `read_pane_content` | Read the last N lines of a task's agent tmux pane |
-| `send_to_task` | Send a message to a task's agent pane (Planning/Running only) |
-
 **How it works:**
 1. When you press `O`, the TUI registers the MCP server with the orchestrator agent via `claude mcp add-json --scope local`
 2. The orchestrator receives phase completion notifications pushed to its tmux pane when idle
@@ -496,143 +635,6 @@ The orchestrator communicates with agtx through the [Model Context Protocol (MCP
 5. If a task has been idle for 1+ minute without a phase artifact, the orchestrator is notified — it reads the pane with `read_pane_content`, then either nudges the agent with `send_to_task` or calls `move_task` with `escalate_to_user` to flag it for your attention
 6. Escalated tasks show a `⚠` badge on the kanban board; opening the task popup shows the reason and dismisses the flag
 7. MCP registration is cleaned up when the orchestrator is stopped
-
-## Brainstorm & Sweep
-
-Two companion skills for capturing ideas and turning them into tasks.
-
-| Skill | Command | When to use |
-|-------|---------|-------------|
-| **Brainstorm** | `/agtx:brainstorm` | Explore a feature idea — discussion only, no planning or implementation |
-| **Sweep** | `/agtx:sweep` | Push conversation outcomes to the agtx board as tasks |
-
-**Typical flow:**
-```
-/agtx:brainstorm   ← explore the idea freely
-      ↓
-/agtx:sweep        ← extract tasks, confirm, push to board
-      ↓
-agtx board         ← tasks appear in Backlog, ready to plan
-```
-
-The brainstorm skill keeps the agent in discussion mode — asking questions, surfacing trade-offs, no code or plans. When the conversation feels complete, run `/agtx:sweep` to decompose outcomes into feature-level tasks and push them to the board with a single confirmation step.
-
-### Install
-
-<details>
-<summary><b>Claude Code (recommended)</b></summary>
-
-**Install via plugin marketplace** (two steps — adds the marketplace, then installs):
-```
-/plugin marketplace add fynnfluegge/agtx
-/plugin install agtx@agtx-marketplace
-```
-
-This registers the MCP server automatically. Then in any Claude Code session:
-```
-/agtx:sweep
-```
-
-**Manual install** (if you prefer):
-```bash
-claude mcp add agtx -- agtx mcp-serve
-```
-
-Then copy the skill to Claude's command discovery path:
-```bash
-mkdir -p ~/.claude/commands/agtx
-cp skills/sweep/SKILL.md ~/.claude/commands/agtx/sweep.md
-```
-
-</details>
-
-<details>
-<summary><b>Gemini CLI</b></summary>
-
-Add the skill to your `GEMINI.md` for persistent context:
-```bash
-echo "@~/skills/sweep/SKILL.md" >> ~/GEMINI.md
-```
-
-Register the global MCP server in your Gemini config:
-```bash
-gemini mcp add agtx -- agtx mcp-serve
-```
-
-Then in any Gemini session:
-```
-/agtx-sweep
-```
-
-</details>
-
-<details>
-<summary><b>Cursor</b></summary>
-
-Copy the skill into your Cursor rules:
-```bash
-cp skills/sweep/SKILL.md ~/.cursor/rules/agtx-sweep.md
-```
-
-Register the MCP server in Cursor's MCP settings (`~/.cursor/mcp.json`):
-```json
-{
-  "mcpServers": {
-    "agtx": {
-      "command": "agtx",
-      "args": ["mcp-serve"]
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>Codex</b></summary>
-
-**Install via repo marketplace** — add to your project's `.agents/plugins/marketplace.json`:
-```json
-{
-  "name": "local-repo",
-  "plugins": [
-    {
-      "name": "agtx",
-      "source": {
-        "source": "local",
-        "path": "./plugins/agtx"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    }
-  ]
-}
-```
-
-Then in any Codex session:
-```
-@agtx:sweep
-@agtx:brainstorm
-```
-
-</details>
-
-<details>
-<summary><b>Other agents</b></summary>
-
-Skills are plain Markdown — they work with any agent that accepts instruction files. Copy `skills/sweep/SKILL.md` into your agent's context and register the MCP server:
-
-```bash
-agtx mcp-serve   # global mode — works from any directory
-```
-
-</details>
-
-> [!NOTE]
-> The project must have been opened in agtx at least once to appear in `list_projects`. Run `agtx` in your project directory first.
 
 ## Contributing
 
