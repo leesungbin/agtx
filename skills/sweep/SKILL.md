@@ -1,6 +1,7 @@
 ---
-name: sweep
+name: agtx-sweep
 description: "Sweep this conversation into agtx tasks and push them to the kanban board. Use when the user wants to capture, decompose, or hand off conversation results to the agtx board."
+disable-model-invocation: true
 ---
 
 # agtx — Terminal Kanban for Coding Agents

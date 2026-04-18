@@ -497,30 +497,51 @@ The orchestrator communicates with agtx through the [Model Context Protocol (MCP
 6. Escalated tasks show a `⚠` badge on the kanban board; opening the task popup shows the reason and dismisses the flag
 7. MCP registration is cleaned up when the orchestrator is stopped
 
-## Sweep — Push Any Conversation to the Board
+## Brainstorm & Sweep
 
-Running a brainstorm or research session in any coding agent? Sweep the conversation into agtx tasks with a single command — `/agtx:sweep`.
+Two companion skills for capturing ideas and turning them into tasks.
 
-The agent extracts every actionable work item from the conversation, presents a proposed task list for your confirmation, and pushes confirmed tasks directly to the agtx board.
+| Skill | Command | When to use |
+|-------|---------|-------------|
+| **Brainstorm** | `/agtx:brainstorm` | Explore a feature idea — discussion only, no planning or implementation |
+| **Sweep** | `/agtx:sweep` | Push conversation outcomes to the agtx board as tasks |
+
+**Typical flow:**
+```
+/agtx:brainstorm   ← explore the idea freely
+      ↓
+/agtx:sweep        ← extract tasks, confirm, push to board
+      ↓
+agtx board         ← tasks appear in Backlog, ready to plan
+```
+
+The brainstorm skill keeps the agent in discussion mode — asking questions, surfacing trade-offs, no code or plans. When the conversation feels complete, run `/agtx:sweep` to decompose outcomes into feature-level tasks and push them to the board with a single confirmation step.
 
 ### Install
 
 <details>
 <summary><b>Claude Code (recommended)</b></summary>
 
-**Marketplace install:**
+**Install via plugin marketplace** (two steps — adds the marketplace, then installs):
 ```
-/plugin install fynnfluegge/agtx
+/plugin marketplace add fynnfluegge/agtx
+/plugin install agtx@agtx-marketplace
 ```
 
-**Manual install:**
+This registers the MCP server automatically. Then in any Claude Code session:
+```
+/agtx:sweep
+```
+
+**Manual install** (if you prefer):
 ```bash
 claude mcp add agtx -- agtx mcp-serve
 ```
 
-Then in any Claude Code session:
-```
-/agtx:sweep
+Then copy the skill to Claude's command discovery path:
+```bash
+mkdir -p ~/.claude/commands/agtx
+cp skills/sweep/SKILL.md ~/.claude/commands/agtx/sweep.md
 ```
 
 </details>
@@ -530,7 +551,7 @@ Then in any Claude Code session:
 
 Add the skill to your `GEMINI.md` for persistent context:
 ```bash
-echo "@~/skills/agtx/sweep/SKILL.md" >> ~/GEMINI.md
+echo "@~/skills/sweep/SKILL.md" >> ~/GEMINI.md
 ```
 
 Register the global MCP server in your Gemini config:
@@ -550,7 +571,7 @@ Then in any Gemini session:
 
 Copy the skill into your Cursor rules:
 ```bash
-cp skills/agtx/sweep/SKILL.md ~/.cursor/rules/agtx-sweep.md
+cp skills/sweep/SKILL.md ~/.cursor/rules/agtx-sweep.md
 ```
 
 Register the MCP server in Cursor's MCP settings (`~/.cursor/mcp.json`):
@@ -570,27 +591,31 @@ Register the MCP server in Cursor's MCP settings (`~/.cursor/mcp.json`):
 <details>
 <summary><b>Codex</b></summary>
 
-Copy the skill to Codex's skill discovery path:
-```bash
-mkdir -p .codex/skills/agtx-sweep
-cp skills/agtx/sweep/SKILL.md .codex/skills/agtx-sweep/SKILL.md
-```
-
-Register the MCP server in `.codex/config.json`:
+**Install via repo marketplace** — add to your project's `.agents/plugins/marketplace.json`:
 ```json
 {
-  "mcp": {
-    "agtx": {
-      "command": "agtx",
-      "args": ["mcp-serve"]
+  "name": "local-repo",
+  "plugins": [
+    {
+      "name": "agtx",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agtx"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
-  }
+  ]
 }
 ```
 
 Then in any Codex session:
 ```
-$agtx-sweep
+@agtx:sweep
+@agtx:brainstorm
 ```
 
 </details>
@@ -598,7 +623,7 @@ $agtx-sweep
 <details>
 <summary><b>Other agents</b></summary>
 
-Skills are plain Markdown — they work with any agent that accepts instruction files. Copy `skills/agtx/sweep/SKILL.md` into your agent's context and register the MCP server:
+Skills are plain Markdown — they work with any agent that accepts instruction files. Copy `skills/sweep/SKILL.md` into your agent's context and register the MCP server:
 
 ```bash
 agtx mcp-serve   # global mode — works from any directory

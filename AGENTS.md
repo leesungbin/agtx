@@ -46,7 +46,7 @@ See [CLAUDE.md](CLAUDE.md) for the full architecture reference including common 
 If you want to sweep this conversation into agtx tasks, use the sweep skill:
 
 ```
-@skills/agtx/sweep/SKILL.md
+@skills/sweep/SKILL.md
 ```
 
 Follow the Sweep workflow in that file.

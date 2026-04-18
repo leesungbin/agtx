@@ -53,12 +53,18 @@ src/
 └── config/
     └── mod.rs        # GlobalConfig, ProjectConfig, ThemeConfig, WorkflowPlugin
 
-skills/                # Built-in skill files (embedded at compile time)
-├── plan.md            # Planning phase instructions
-├── execute.md         # Execution phase instructions
-├── review.md          # Review phase instructions
-├── research.md        # Research phase instructions
-└── agtx/sweep/SKILL.md # Sweep skill — push any conversation to the agtx board (/agtx:sweep)
+skills/                # Plugin skill files — auto-discovered as /agtx:* (Claude) or @agtx:* (Codex)
+├── sweep/SKILL.md     # Sweep skill — push any conversation to the board (/agtx:sweep)
+└── brainstorm/SKILL.md # Brainstorm skill — free-form exploration (/agtx:brainstorm)
+
+.claude-plugin/        # Claude Code plugin manifest
+├── plugin.json        # Plugin metadata + MCP server registration
+└── marketplace.json   # Makes repo discoverable via /plugin marketplace add
+
+.codex-plugin/         # Codex plugin manifest
+└── plugin.json        # Plugin metadata (skills + MCP via .mcp.json)
+
+.mcp.json              # Shared MCP server config (used by Codex plugin)
 
 plugins/               # Bundled plugin configs (embedded at compile time)
 ├── agtx/
